@@ -24,6 +24,7 @@ type ServerConfig struct{
 
 // Device is an interface for block device.
 type Devicer interface{
+	io.ReadWriteCloser
 	ReadAt(p []byte, off int64) (n int, err error)
 	WriteAt(p []byte, off int64) (n int, err error)
 	Discard(size int64, off int64) error
@@ -35,7 +36,7 @@ type Device io.ReadWriteCloser
 
 type Server struct{
 	TargetName	string
-	LUNs		[]*Device
+	LUNs		[]Devicer
 }
 
 var _ interface{
@@ -53,24 +54,33 @@ func main() {
 	srv := NewServer(dev, &ServerConfig{	"172.24.1.3",
 						"iqn.2016-04.npp.sit-1920:storage",
 						[]string{LUN1, LUN2}})
+
 	fmt.Println(srv)
+	for i:=0; i<100; i++ {
+		fmt.Fprint(srv.LUNs[0], "0")
+		fmt.Fprint(srv.LUNs[1], "0")
+	}
+	//srv.LUNs[0].WriteAt(byte(0x30), 50)
+	srv.Close()
 
 	return
 }
 
-func NewServer(dev Device, conf *ServerConfig) (srv *Server) {
+func NewServer(dev Device, conf *ServerConfig) *Server {
+	var srv Server
+
 	srv.TargetName = conf.TargetName
-	srv.LUNs = make([]*Device, len(conf.LUNs))
+	srv.LUNs = make([]Device, len(conf.LUNs))
 	for i, fileName := range conf.LUNs {
 		fi, err := os.OpenFile(fileName, os.O_RDWR, os.ModePerm)
 		if err != nil {
-			Logger.Println("Can't open " + fileName + " file. ", err)
+			Logger.Println(err)
 			continue
 		}
-		srv.LUNs[i] = NewDevice(fi)
+		srv.LUNs[i] = *NewDevice(fi)
 	}
 
-	return srv
+	return &srv
 }
 
 func createLogger() (l *log.Logger) {
@@ -103,6 +113,7 @@ func (s *Server)Close() (err error) {
 	return err
 }
 
-func (d *Device)Close() error {
-	return io.Closer()
-}
+//func (d *Device)WriteAt(p []byte, off int64) (n int, err error) {
+//	return d.WriteAt(p, off)
+//}
+
