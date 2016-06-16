@@ -119,3 +119,33 @@ func (d *Device)Flush() error {
 func (d *Device)Close() error {
 	return d.F.Close()
 }
+
+/*
+package filedev
+
+var _ Devicer = (*FileDevice)(nil)
+
+func NewFileDevice(f *os.File) Devicer {
+  return &FileDevice{f:f}
+}
+type FileDevice struct{
+  f *os.File
+}
+func (d *FileDevice) ReadAt(p []byte, off int64) (n int, err error) {
+  return d.f.ReadAt(p, off)
+}
+func (d *FileDevice) WriteAt(p []byte, off int64) (n int, err error) {
+  return d.f.WriteAt(p, off)
+}
+func (d *FileDevice) Discard(size int64, off int64) error {
+  return nil // no-op for file
+}
+func (d *FileDevice) Flush() error {
+  return d.f.Sync()
+}
+func (d *FileDevice) Close() error {
+  return d.f.Close()
+}
+*/
+
+
